@@ -1,5 +1,5 @@
 from random import sample
-
+from tile import Tile
 
 class BoardGenerator:
     def __init__(self, size, numMines):
@@ -9,9 +9,8 @@ class BoardGenerator:
         self.generate_board()
 
     def generate_board(self):
-        # Generate a board for minesweeper
-        # A mine is represented by '-1'
-        self.board = [[0 for i in range(0, self.size)] for j in range(0, self.size)]
+        # Generate a board for Minesweeper
+        self.board = [[Tile(j, i) for i in range(0, self.size)] for j in range(0, self.size)]
 
         # select self.numMines random fields from 0 to self.size*self.size - 1
         fields_with_mines_ids = sample(range(0, self.size * self.size), self.numMines)
@@ -21,10 +20,10 @@ class BoardGenerator:
 
         for field in fields_with_mines:
             i, j = field
-            self.board[i][j] = -1
+            self.board[i][j].mine = True
 
             # add 1 to all neighbours of that field, except of the fields that already contain a bomb
             for x in range(max(0, i - 1), min(i + 2, self.size)):
                 for y in range(max(0, j - 1), min(j + 2, self.size)):
-                    if (x, y) != (i, j) and self.board[x][y] >= 0:
-                        self.board[x][y] += 1
+                    if (x, y) != (i, j) and not self.board[x][y].mine:
+                        self.board[x][y].neighbours_with_mines += 1

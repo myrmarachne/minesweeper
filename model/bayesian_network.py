@@ -12,13 +12,13 @@ class BayesianNetwork:
 
     def generate_network(self, size):
         # generate network with size^2 X and Y nodes and one MinesAmount node
-
         all_x_nodes = []
 
         for x_coord in range(0, size):
             for y_coord in range(0, size):
                 x_node_id = str_join('X', x_coord, '_', y_coord)
-                self.create_cpt_node(x_node_id, x_node_id, ["NoMine", "Mine"], [0.5, 0.5], (x_coord+1)*10, (y_coord+1)*10)
+                mine_probability = float(self.numMines) / (float (size * size))
+                self.create_cpt_node(x_node_id, x_node_id, ["NoMine", "Mine"], [1-mine_probability, mine_probability], (x_coord+1)*10, (y_coord+1)*10)
                 all_x_nodes.append(x_node_id)
 
         for x_coord in range(0, size):
@@ -35,7 +35,9 @@ class BayesianNetwork:
                 y_node_id = str_join('Y', x_coord, '_', y_coord)
                 self.create_equation_node(y_node_id, y_node_id, y_parents, (x_coord+1)*10 + 5, (y_coord+1)*10 + 5)
 
-        self.create_equation_node("MinesAmount", "MinesAmount", all_x_nodes, 0, 0)
+
+        # update the network
+        self.net.update_beliefs()
 
         # write the network to the xdsl file
         self.net.write_file("Minesweeper3x3.xdsl")
@@ -80,7 +82,7 @@ class BayesianNetwork:
         self.net.read_file(self.fileName)
 
         # set the number of mines to numMines
-        self.net.set_cont_evidence("MinesAmount", self.numMines)
+        #self.net.set_cont_evidence("MinesAmount", self.numMines)
 
         # update the network
         self.net.update_beliefs()
@@ -104,7 +106,7 @@ class BayesianNetwork:
     def find_best_nodes(self):
         # returns a list(!) of coordinates of fields with the lowest probability of finding a mine
 
-        x_nodes = [node for node in self.net.get_all_node_ids() if node.startswith('X')]
+        x_nodes = [node for node in self.net.get_all_node_ids() if node.startswith('X')]       # print x_nodes
 
         # filter out the already revealed fields
         not_revealed = list(filter(lambda nodeId: not self.net.is_evidence(nodeId), x_nodes))
@@ -119,6 +121,6 @@ class BayesianNetwork:
 
         if len(not_revealed) > 0:
             best = self.net.get_node_value(not_revealed[0])[0]
-            return [node for node in not_revealed if self.net.get_node_value(node)[0] == best]
+            return [node for node in not_revealed if abs(self.net.get_node_value(node)[0] - best) < 0.05]
         else:
             return []
