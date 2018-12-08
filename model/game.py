@@ -1,59 +1,59 @@
 from bayesian_network import BayesianNetwork
 from board_generator import BoardGenerator
-from utils import str_join
+from utils import neighbours
 
 
 class Game:
-    def __init__(self, size=6, numMines=15):
+    def __init__(self, size, numMines):
         self.size = size
         self.board = BoardGenerator(size, numMines).board
         self.fieldsRevealed = 0
         self.numMines = numMines
         self.gameOver = False
+        self.victory = False
 
         self.network = BayesianNetwork(size=size, numMines=numMines)
 
-    def play(self):
-        while not self.gameOver:
-            self.print_board()
-            self.print_safe()
-            tile = self.prompt_for_field()
-            self.reveal_field(tile)
+    def reveal_field(self, x, y):
+        def reveal_tile(x, y):
+            revealed = []
+            queue = [(x, y)]
+            while len(queue) > 0:
+                i, j = queue.pop()
+                if not self.mine(i, j) and (i, j) not in revealed:
+                    revealed.append((i, j))
+                    if self.neighbours_with_mines(i, j) < 1:
+                        queue.extend(neighbours(i, j, self.size))
 
-    def reveal_field(self, tile):
-        self.fieldsRevealed += 1
-        tile.reveal()
+            if (x, y) not in revealed:
+                revealed.append((x, y))
+
+            return revealed
+
+        tile = self.board[x][y]
+        revealed_tiles = reveal_tile(x, y)
+        self.fieldsRevealed += len(revealed_tiles)
+
+        for (i, j) in revealed_tiles:
+            self.board[i][j].reveal()
+
         if tile.mine:
             self.gameOver = True
-            print ("GAME OVER")
+            self.victory = False
         else:
-            self.network.reveal_field_without_mine(tile.x_coord, tile.y_coord, tile.neighbours_with_mines)
-
-            if self.fieldsRevealed + self.numMines == self.size * self.size:
+            fields_values = map(lambda (x, y): self.neighbours_with_mines(x,y), revealed_tiles)
+            self.network.reveal_fields_without_mine(zip(revealed_tiles, fields_values))
+            if self.fieldsRevealed + self.numMines >= self.size * self.size:
                 self.gameOver = True
-                print("You won")
+                self.victory = True
 
-    def print_safe(self):
-        print("The most safe fields are: ")
-        print(self.network.find_best_nodes())
+        return revealed_tiles
 
-    def print_board(self):
-        for row in self.board:
-            print map(lambda x: "[ ]" if not x.revealed else str_join('[', x.neighbours_with_mines, ']'), row)
+    def mine(self, x, y):
+        return self.board[x][y].mine
 
-    def prompt_for_field(self):
-        user_input = raw_input("Provide the coordinates of the field you would like to use: ")
+    def neighbours_with_mines(self, x, y):
+        return self.board[x][y].neighbours_with_mines
 
-        # validate the user input
-        try:
-            x, y = map(lambda x: int(x), user_input.split(' ', 1))
-            tile = self.board[x][y]
-
-            # check if the field was already revealed
-            if tile.revealed:
-                return self.prompt_for_field()
-            return tile
-
-        except ValueError:
-            print("The provided coordinates are not correct")
-            return self.prompt_for_field()
+    def get_safe(self):
+        return self.network.find_best_nodes()

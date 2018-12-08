@@ -40,7 +40,7 @@ class BayesianNetwork:
         self.net.update_beliefs()
 
         # write the network to the xdsl file
-        self.net.write_file("Minesweeper3x3.xdsl")
+        self.net.write_file("Minesweeper.xdsl")
 
     def create_cpt_node(self, id, name, outcomes, definitions, x_pos, y_pos):
         handle = self.net.add_node(pysmile.NodeType.CPT, id)
@@ -81,9 +81,6 @@ class BayesianNetwork:
         # read the topology of the network
         self.net.read_file(self.fileName)
 
-        # set the number of mines to numMines
-        #self.net.set_cont_evidence("MinesAmount", self.numMines)
-
         # update the network
         self.net.update_beliefs()
 
@@ -95,13 +92,17 @@ class BayesianNetwork:
         node_id = str_join('Y', x_coord, '_', y_coord)
         self.net.set_cont_evidence(node_id, fieldValue)
 
+    def reveal_fields_without_mine(self, fields):
+        for (x, y), val in fields:
+            self.reveal_field_without_mine(x, y, val)
+
+        # update the network
+        self.net.update_beliefs()
+
     def reveal_field_without_mine(self, x_coord, y_coord, fieldValue):
         # fieldValue is an integer, shown on the revealed field
         self.set_x_evidence(x_coord, y_coord, "NoMine")
         self.set_y_evidence(x_coord, y_coord, fieldValue)
-
-        # update the network
-        self.net.update_beliefs()
 
     def find_best_nodes(self):
         # returns a list(!) of coordinates of fields with the lowest probability of finding a mine
@@ -121,6 +122,6 @@ class BayesianNetwork:
 
         if len(not_revealed) > 0:
             best = self.net.get_node_value(not_revealed[0])[0]
-            return [node for node in not_revealed if abs(self.net.get_node_value(node)[0] - best) < 0.05]
+            return [map(lambda x: int(x), node.strip('X').split('_')) for node in not_revealed if abs(self.net.get_node_value(node)[0] - best) < 0.0005]
         else:
             return []

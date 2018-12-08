@@ -1,14 +1,5 @@
-from model.game import Game
-
-
-def main():
-    # Initialize game
-    game = Game()
-    game.play()
-
-    # Initialize GUI
-
-
+from game_controller.controller import Controller
 
 if __name__ == '__main__':
-    main()
+    c = Controller()
+    c.run()
