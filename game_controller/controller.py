@@ -8,8 +8,14 @@ import sys
 class Controller:
     def __init__(self):
         self.root = tk.Tk()
-        self.model = Game(size=4, numMines=4)
-        self.view = MainWindow(self.root, self.model, self.reveal_field)
+
+        self.size = tk.StringVar()
+        self.num_mines = tk.StringVar()
+        self.size.set(6)
+        self.num_mines.set(3)
+
+        self.model = Game(int(self.size.get()), int(self.num_mines.get()))
+        self.view = MainWindow(self.root, self.model, self.reveal_field, self.reset_game, self.size, self.num_mines)
 
     def run(self):
         self.root.title("Minesweeper")
@@ -17,7 +23,11 @@ class Controller:
         self.root.mainloop()
 
     def reset_game(self):
-        self.model = Game(size=4, numMines=4)
+        try:
+            self.model = Game(int(self.size.get()), int(self.num_mines.get()))
+        except ValueError:
+            self.model = Game()
+
         self.view.reset_view(self.model, self.reveal_field)
 
     def game_over(self):
@@ -28,7 +38,7 @@ class Controller:
             else:
                 sys.exit()
         else:
-            play_again = tkMessageBox.showwarning("Game over", "You're a loser! Do you want to play again?")
+            play_again = tkMessageBox.askyesno("Game over", "You're a loser! Do you want to play again?")
             if play_again:
                 self.reset_game()
             else:
@@ -39,11 +49,8 @@ class Controller:
         revealed = self.model.reveal_field(x_coord, y_coord)
 
         # Update the view
-        self.view.update_revealed_fields(revealed)
+        self.view.update_game_view(revealed)
 
         # Check if game is over
         if self.model.gameOver:
             self.game_over()
-        else:
-            # Paint the most safe fields
-            self.view.match_safe()

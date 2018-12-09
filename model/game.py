@@ -4,7 +4,7 @@ from utils import neighbours
 
 
 class Game:
-    def __init__(self, size, numMines):
+    def __init__(self, size=6, numMines=3):
         self.size = size
         self.board = BoardGenerator(size, numMines).board
         self.fieldsRevealed = 0
@@ -20,7 +20,7 @@ class Game:
             queue = [(x, y)]
             while len(queue) > 0:
                 i, j = queue.pop()
-                if not self.mine(i, j) and (i, j) not in revealed:
+                if not self.mine(i, j) and (i, j) not in revealed and not self.board[i][j].revealed:
                     revealed.append((i, j))
                     if self.neighbours_with_mines(i, j) < 1:
                         queue.extend(neighbours(i, j, self.size))
@@ -32,6 +32,7 @@ class Game:
 
         tile = self.board[x][y]
         revealed_tiles = reveal_tile(x, y)
+
         self.fieldsRevealed += len(revealed_tiles)
 
         for (i, j) in revealed_tiles:
@@ -57,3 +58,6 @@ class Game:
 
     def get_safe(self):
         return self.network.find_best_nodes()
+
+    def get_probability(self, x, y):
+        return self.network.get_no_mine_probability(x, y)

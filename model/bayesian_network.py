@@ -4,7 +4,7 @@ from utils import str_join
 
 
 class BayesianNetwork:
-    def __init__(self, fileName="Minesweeper3x3.xdsl", numMines=2, size=3):
+    def __init__(self, numMines, size, fileName="Minesweeper.xdsl"):
         self.net = pysmile.Network()
         self.fileName = fileName
         self.numMines = numMines
@@ -96,13 +96,17 @@ class BayesianNetwork:
         for (x, y), val in fields:
             self.reveal_field_without_mine(x, y, val)
 
-        # update the network
-        self.net.update_beliefs()
-
     def reveal_field_without_mine(self, x_coord, y_coord, fieldValue):
         # fieldValue is an integer, shown on the revealed field
         self.set_x_evidence(x_coord, y_coord, "NoMine")
         self.set_y_evidence(x_coord, y_coord, fieldValue)
+
+        # update the network
+        self.net.update_beliefs()
+
+    def get_no_mine_probability(self, x_coord, y_coord):
+        node = str_join('X', x_coord, '_', y_coord)
+        return self.net.get_node_value(node)[0]
 
     def find_best_nodes(self):
         # returns a list(!) of coordinates of fields with the lowest probability of finding a mine
